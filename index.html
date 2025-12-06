@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes" />
+  <title>Gemini AI</title>
+  
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Gemini AI" />
+  <link rel="apple-touch-icon" href="icon-512.png" />
+  
+  <style>
+    * { box-sizing: border-box; }
+    html, body { 
+      margin: 0; 
+      padding: 0; 
+      width: 100%; 
+      height: 100%; 
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      }
+      #messages::-webkit-scrollbar {
+        width: 6px;
+      }
+      #messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      #messages::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+      }
+      #messages::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .message-bubble {
+        max-width: 75%;
+        word-wrap: break-word;
+      }
+      .typing-indicator span {
+        height: 8px;
+        width: 8px;
+        float: left;
+        margin: 0 1px;
+        background-color: #9E9EA1;
+        display: block;
+        border-radius: 50%;
+        opacity: 0.4;
+        animation: 1s blink infinite;
+      }
+      .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100">
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+      <div class="bg-white rounded-xl shadow-2xl p-8 m-4 w-full max-w-md transform transition-all">
+        <h2 class="text-2xl font-bold text-gray-800 text-center mb-2">Gemini API Key</h2>
+        <p class="text-gray-500 text-center mb-6">Please enter your Google AI Studio API key to begin.</p>
+        <div class="relative">
+          <input type="password" id="apiKeyInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your API key here...">
+          <button id="toggleApiVisibility" type="button" class="absolute inset-y-0 right-0 px-4 text-gray-500 hover:text-gray-700">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <button id="saveApiKey" class="w-full mt-6 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-300">
+          Save & Start Chatting
+        </button>
+      </div>
+    </div>
+    <!-- Main Chat Interface -->
+    <div id="chatInterface" class="flex flex-col h-screen bg-gray-100 hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-200">
+        <div class="flex items-center">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl mr-3">G</div>
+          <h1 class="text-xl font-bold text-gray-800">Gemini Chat</h1>
+        </div>
+        <button id="settingsButton" class="text-gray-500 hover:text-gray-800 transition-colors">
+          <i class="fas fa-cog fa-lg"></i>
+        </button>
+      </header>
+      <!-- Messages Area -->
+      <main id="messages" class="flex-1 p-6 space-y-4 overflow-y-auto">
+        <div class="flex justify-start">
+          <div class="bg-gray-200 text-gray-800 rounded-xl p-4 message-bubble rounded-bl-none">
+            <p>Hello! I'm your Gemini-powered assistant. How can I help you today?</p>
+          </div>
+        </div>
+      </main>
+      <!-- Input Form -->
+      <footer class="bg-white p-4 border-t border-gray-200">
+        <form id="chatForm" class="flex items-center space-x-4">
+          <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" class="flex-1 w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button type="submit" class="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-300 flex-shrink-0">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+      </footer>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const apiKeyModal = document.getElementById('apiKeyModal');
+        const chatInterface = document.getElementById('chatInterface');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const saveApiKeyButton = document.getElementById('saveApiKey');
+        const toggleApiVisibilityButton = document.getElementById('toggleApiVisibility');
+        const settingsButton = document.getElementById('settingsButton');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const messagesContainer = document.getElementById('messages');
+        const GEMINI_API_KEY = 'gemini_api_key';
+        const checkApiKey = () => {
+          const storedKey = localStorage.getItem(GEMINI_API_KEY);
+          if (storedKey) {
+            apiKeyModal.classList.add('hidden');
+            chatInterface.classList.remove('hidden');
+          } else {
+            apiKeyModal.classList.remove('hidden');
+            chatInterface.classList.add('hidden');
+          }
+        };
+        const saveApiKey = () => {
+          const key = apiKeyInput.value.trim();
+          if (key) {
+            localStorage.setItem(GEMINI_API_KEY, key);
+            checkApiKey();
+          } else {
+            alert('Please enter a valid API key.');
+          }
+        };
+        const toggleApiVisibility = () => {
+          const icon = toggleApiVisibilityButton.querySelector('i');
+          if (apiKeyInput.type === 'password') {
+            apiKeyInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+          } else {
+            apiKeyInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+          }
+        };
+        const addMessage = (message, sender) => {
+          const messageWrapper = document.createElement('div');
+          const messageBubble = document.createElement('div');
+          messageBubble.classList.add('p-4', 'rounded-xl', 'message-bubble');
+          if (sender === 'user') {
+            messageWrapper.classList.add('flex', 'justify-end');
+            messageBubble.classList.add('bg-blue-600', 'text-white', 'rounded-br-none');
+          } else {
+            messageWrapper.classList.add('flex', 'justify-start');
+            messageBubble.classList.add('bg-gray-200', 'text-gray-800', 'rounded-bl-none');
+          }
+          messageBubble.innerHTML = `<p>${message}</p>`; // Use innerHTML to render potential markdown
+          messageWrapper.appendChild(messageBubble);
+          messagesContainer.appendChild(messageWrapper);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        };
+        const showTypingIndicator = () => {
+          const indicatorWrapper = document.createElement('div');
+          indicatorWrapper.id = 'typing-indicator';
+          indicatorWrapper.classList.add('flex', 'justify-start');
+          indicatorWrapper.innerHTML = `
+                    <div class="bg-gray-200 text-gray-800 rounded-xl p-4 message-bubble rounded-bl-none">
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                `;
+          messagesContainer.appendChild(indicatorWrapper);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        };
+        const hideTypingIndicator = () => {
+          const indicator = document.getElementById('typing-indicator');
+          if (indicator) {
+            indicator.remove();
+          }
+        };
+        // This is a MOCK function. Replace this with your actual API call to Gemini.
+        // Note: Making direct API calls from the client-side is insecure. 
+        // It's recommended to use a backend proxy.
+        const callGeminiApi = async (prompt) => {
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Mock responses
+          const responses = [
+            "That's an interesting question! Let me think...",
+            "I can certainly help with that. What are the specifics?",
+            "Could you please elaborate a bit more on your request?",
+            "Generated response: The sky is blue due to a phenomenon called Rayleigh scattering.",
+            "Here's a code snippet you might find useful: `console.log('Hello, Gemini!');`"
+          ];
+          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+          return `**Mock Response:** ${randomResponse}`;
+        };
+        const handleFormSubmit = async (e) => {
+          e.preventDefault();
+          const userMessage = userInput.value.trim();
+          if (!userMessage) return;
+          addMessage(userMessage, 'user');
+          userInput.value = '';
+          userInput.focus();
+          showTypingIndicator();
+          try {
+            // In a real application, you would pass the API key from localStorage.
+            // const apiKey = localStorage.getItem(GEMINI_API_KEY);
+            const botResponse = await callGeminiApi(userMessage);
+            hideTypingIndicator();
+            addMessage(botResponse, 'bot');
+          } catch (error) {
+            hideTypingIndicator();
+            addMessage('Sorry, something went wrong. Please check your API key or try again later.', 'bot');
+            console.error('API Error:', error);
+          }
+        };
+        // Event Listeners
+        saveApiKeyButton.addEventListener('click', saveApiKey);
+        apiKeyInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') saveApiKey();
+        });
+        toggleApiVisibilityButton.addEventListener('click', toggleApiVisibility);
+        settingsButton.addEventListener('click', () => {
+          const key = localStorage.getItem(GEMINI_API_KEY);
+          if (key) apiKeyInput.value = key;
+          apiKeyModal.classList.remove('hidden');
+        });
+        chatForm.addEventListener('submit', handleFormSubmit);
+        // Initial check
+        checkApiKey();
+      });
+    </script>
+  </body>
+</html>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered'))
+      .catch(err => console.error('SW error:', err));
+  });
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  deferredPrompt = e;
+});
+
+window.installPWA = async function() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    return outcome;
+  }
+  return 'not_available';
+};
+</script>
+</body>
+</html>
